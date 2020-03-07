@@ -1,5 +1,5 @@
 import numpy as numpy
-import tensorflow as tf
+import tensorflow as tf ## This must be tf version 1.0.0
 import time
 import re
 
@@ -189,25 +189,24 @@ def decode_training_set(encoder_state, decoder_cell, decoder_embedded_input, seq
 
 ### Second part of three ###
 ### Decoding the test/valuation set 
-def decode_test_set(encoder_state, decoder_cell, decoder_embeddings_matrix, sos_id, eos_id, maximum_length, num_words, sequence_length, decoding_scope, output_function, keep_prob, batch_size):
+def decode_test_set(encoder_state, decoder_cell, decoder_embeddings_matrix, sos_id, eos_id, maximum_length, num_words, decoding_scope, output_function, keep_prob, batch_size):
     attention_states = tf.zeros([batch_size, 1, decoder_cell.output_size])
-    attention_keys, attention_values, attention_score_function, attention_construct_function = tf.contrib.seq2seq.prepare_attention(attention_states, attention_option = 'bahdanau', num_units = decoder_cell.output_size)
+    attention_keys, attention_values, attention_score_function, attention_construct_function = tf.contrib.seq2seq.prepare_attention(attention_states, attention_option = "bahdanau", num_units = decoder_cell.output_size)
     test_decoder_function = tf.contrib.seq2seq.attention_decoder_fn_inference(output_function,
-                                                                              encoder_state[0], 
-                                                                              attention_keys, 
-                                                                              attention_values, 
-                                                                              attention_score_function, 
+                                                                              encoder_state[0],
+                                                                              attention_keys,
+                                                                              attention_values,
+                                                                              attention_score_function,
                                                                               attention_construct_function,
-                                                                              decoder_embeddings_matrix, 
-                                                                              sos_id, 
-                                                                              eos_id, 
-                                                                              maximum_length, 
+                                                                              decoder_embeddings_matrix,
+                                                                              sos_id,
+                                                                              eos_id,
+                                                                              maximum_length,
                                                                               num_words,
-                                                                              name = 'attn_dec_inf')
+                                                                              name = "attn_dec_inf")
     test_predictions, decoder_final_state, decoder_final_context_state = tf.contrib.seq2seq.dynamic_rnn_decoder(decoder_cell,
-                                                                  test_decoder_function,
-                                                                  scope = decoding_scope)
-
+                                                                                                                test_decoder_function,
+                                                                                                                scope = decoding_scope)
     return test_predictions
 
 ### Third part of three ###
@@ -237,8 +236,8 @@ def decoder_rnn(decoder_embedded_input, decoder_embeddings_matrix, encoder_state
         test_predictions = decode_test_set(encoder_state,
                                            decoder_cell,
                                            decoder_embeddings_matrix,
-                                           word2int['<SOS>'],
-                                           word2int['<EOS>'],
+                                           words2int['<SOS>'],
+                                           words2int['<EOS>'],
                                            sequence_length - 1,
                                            num_words,
                                            decoding_scope,
@@ -283,3 +282,30 @@ learning_rate = 0.01
 learning_rate_decay = 0.9
 min_learning_rate = 0.0001
 keep_probability = 0.5
+
+### Defining a session
+tf.reset_default_graph()
+session = tf.InteractiveSession()
+
+## Loading the model's inputs
+inputs, targets, lr, keep_prob = model_inputs()
+
+### Setting the sequence length
+sequence_length = tf.placeholder_with_default(25, None, name = 'sequence_length')
+
+### getting the shape of the input tensor
+input_shape = tf.shape(inputs)
+
+### Get the training and test predictions
+training_predictions, test_predictions = seq2seq_model(tf.reverse(inputs, [-1]),
+                                                       targets,
+                                                       keep_prob,
+                                                       batch_size,
+                                                       sequence_length,
+                                                       len(answerswords2int),
+                                                       len(questionswords2int),
+                                                       encoding_embedding_size,
+                                                       decoding_embedding_size,
+                                                       rnn_size,
+                                                       num_layers,
+                                                       questionswords2int)
