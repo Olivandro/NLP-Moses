@@ -197,7 +197,7 @@ def decode_test_set(encoder_state, decoder_cell, decoder_embeddings_matrix, sos_
                                                                               attention_keys, 
                                                                               attention_values, 
                                                                               attention_score_function, 
-                                                                              attention_construt_function,
+                                                                              attention_construct_function,
                                                                               decoder_embeddings_matrix, 
                                                                               sos_id, 
                                                                               eos_id, 
@@ -213,7 +213,7 @@ def decode_test_set(encoder_state, decoder_cell, decoder_embeddings_matrix, sos_
 ### Third part of three ###
 ### Creating the decoder RNN
 def decoder_rnn(decoder_embedded_input, decoder_embeddings_matrix, encoder_state, num_words, sequence_length, rnn_size, num_layers, words2int, keep_prob, batch_size):
-    with tf.varible_scope("decoding") as decoding_scope:
+    with tf.variable_scope("decoding") as decoding_scope:
         lstm = tf.contrib.rnn.BasicLSTMCell(rnn_size)
         lstm_dropout = tf.contrib.rnn.DropoutWrapper(lstm, input_keep_prob = keep_prob)
         decoder_cell = tf.contrib.rnn.MultiRNNCell([lstm_dropout] * num_layers)
