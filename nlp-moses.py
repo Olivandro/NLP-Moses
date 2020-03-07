@@ -179,10 +179,10 @@ def decode_training_set(encoder_state, decoder_cell, decoder_embedded_input, seq
                                                                               attention_score_function, 
                                                                               attention_construct_function,
                                                                               name = 'attn_dec_train')
-    decoder_output, _, _ = tf.contrib.seq2seq.dynamic_rnn_decoder(decoder_cell,
+    decoder_output, decoder_final_state, decoder_final_context_state = tf.contrib.seq2seq.dynamic_rnn_decoder(decoder_cell,
                                                                   training_decoder_function,
                                                                   decoder_embedded_input,
-                                                                  sequence_input,
+                                                                  sequence_length,
                                                                   scope = decoding_scope)
     decoder_output_dropout = tf.nn.dropout(decoder_output, keep_prob)
     return output_function(decoder_output_dropout)
@@ -204,7 +204,7 @@ def decode_test_set(encoder_state, decoder_cell, decoder_embeddings_matrix, sos_
                                                                               maximum_length, 
                                                                               num_words,
                                                                               name = 'attn_dec_inf')
-    decoder_output, _, _ = tf.contrib.seq2seq.dynamic_rnn_decoder(decoder_cell,
+    test_predictions, decoder_final_state, decoder_final_context_state = tf.contrib.seq2seq.dynamic_rnn_decoder(decoder_cell,
                                                                   test_decoder_function,
                                                                   scope = decoding_scope)
 
@@ -249,7 +249,7 @@ def decoder_rnn(decoder_embedded_input, decoder_embeddings_matrix, encoder_state
 
 ### Building the seq2seq model
 def seq2seq_model(inputs, targets, keep_prob, batch_size, sequence_length, anwsers_num_words, questions_num_words, encoder_embedding_size, decoder_embedding_size, rnn_size, num_layers, questionswords2int):
-    encoder_embedding_input = tf.contrib.layers.embed_sequence(inputs,
+    encoder_embedded_input = tf.contrib.layers.embed_sequence(inputs,
                                                                anwsers_num_words + 1,
                                                                encoder_embedding_size,
                                                                initializer = tf.random_uniform_initializer(0, 1))
@@ -260,11 +260,11 @@ def seq2seq_model(inputs, targets, keep_prob, batch_size, sequence_length, anwse
     decoder_embedded_input = tf.nn.embedding_lookup(decoder_embeddings_matrix, preprocessed_targets)
     training_predictions, test_predictions = decoder_rnn(decoder_embedded_input,
                                                          decoder_embeddings_matrix,
-                                                         decoder_state,
+                                                         encoder_state,
                                                          questions_num_words,
                                                          sequence_length,
                                                          rnn_size,
-                                                         num_layer,
+                                                         num_layers,
                                                          questionswords2int,
                                                          keep_prob,
                                                          batch_size)
@@ -272,3 +272,14 @@ def seq2seq_model(inputs, targets, keep_prob, batch_size, sequence_length, anwse
 
 ################################### Training seq2seq model #########################################
 
+### Using the Hyperparameters 
+epochs = 100 ## reduce if training takes to long
+batch_size = 64 ## include or decrease 
+rnn_size = 512
+num_layers = 3
+encoding_embedding_size = 512 ## 512 columns 
+decoding_embedding_size = 512
+learning_rate = 0.01
+learning_rate_decay = 0.9
+min_learning_rate = 0.0001
+keep_probability = 0.5
